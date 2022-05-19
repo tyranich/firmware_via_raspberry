@@ -7,7 +7,7 @@ TIMEOUT_SHORT = 0.01
 TIMEOUT_LONG = 0.01
 
 time1 = time.perf_counter()
-s_1 = serial.Serial(port="COM6", baudrate=SERIAL_BAUDRATE_1, timeout=0.0001)
+s_1 = serial.Serial(port="COM22", baudrate=SERIAL_BAUDRATE_1, timeout=0.0001)
 for id_ach_0 in ALL_ANCHORS:
     boot_from_main(s_1, id_ach_0)
 

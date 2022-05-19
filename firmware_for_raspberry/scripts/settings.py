@@ -110,7 +110,7 @@ LOGGING_CONFIG = {
             "datefmt": "%Y-%m-%d %H:%M:%S",
         }, 
         "simple": {
-            "format": "%(asctime)s:%(message)s",
+            "format": "%(asctime)s:%(message)s:%(lineno)d",
             "datefmt": "%Y-%m-%d %H:%M:%S",
         }
     },
@@ -122,18 +122,20 @@ LOGGING_CONFIG = {
             "filename": ERROR_LOG_FILENAME,
             "backupCount": 2,
         },
+        
         "verbose_output": {
             "formatter": "simple",
-            "level": "WARNING",
+            "level": "ERROR",
             "class": "logging.handlers.RotatingFileHandler",
             "filename":WARNING_LOG_FILENAME, 
             "backupCount": 2,
         }
+        
     },
     "loggers": {},
     "root": {
         "level": "INFO",
-        "handlers": ["logfile", "verbose_output"]
+        "handlers": ["logfile"]
     },
 }
 

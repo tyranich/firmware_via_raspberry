@@ -11,7 +11,9 @@ import sys
 4. исправить ошибку логирования(запись сразу в 2 файла, должно писаться в один)
 """
 TIMEOUT_WAIT_DEFAULT = 0.006 #Это посылка 20 байт и прием ответа 10 байт. На скорости 57600 это 5760 байт в секунду. 30/5760 = 6 миллисекунд. 
-COUNTER_ATTEMPT = 30
+COUNTER_ATTEMPT = 30 #счетчик неудачных попыток получить сообщения от анкера 
+DELAY_MULTIPLIER = 1 #множитель задержки на получение сообщение сериал порта 
+
 logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger(__name__)
 
@@ -276,18 +278,18 @@ def waiting_finish_command(s, command, timeout=float, block = bool, id=list, dat
                 serialSendSimple(s, send_command) # отправка команды 
                 
                 time.sleep(TIMEOUT_WAIT_DEFAULT)
-                msg = serialRecvProtocol(s, Preamble.slave.value, TIMEOUT_WAIT_DEFAULT * 4) # получение команды 
+                msg = serialRecvProtocol(s, Preamble.slave.value, TIMEOUT_WAIT_DEFAULT * DELAY_MULTIPLIER) # получение команды 
                 if msg:
                     print(list(msg))
                     if compilance_check(id_anch, command, started_commands, completed_commands, msg, msg_send=send_command) == -1: # проверка сообщения на соблюдение протокола бутлоадера
-                        logger.error("Error anch {}".format(id_anch))
+                        logger.warning("Error anch {}".format(id_anch))
                         break
                 else:
                     counter_cycle += 1
                     if counter_cycle % 2 == 0:
                         serialSendSimple(s, send_command) # отправка команды 
                     elif counter_cycle > COUNTER_ATTEMPT:
-                        logger.error("started anchor {} didn`t answer 10 times {}".format(id_anch, command))
+                        logger.warning("started anchor {} didn`t answer 10 times {}".format(id_anch, command))
                         break 
             
             if id_anch in started_commands.keys(): #проверяем не был ли удален анкер из списка айдишников
@@ -298,17 +300,17 @@ def waiting_finish_command(s, command, timeout=float, block = bool, id=list, dat
                 while not completed_commands.get(id_anch): #оправшиваем анкер пока его айдишник не является ключом в словаре завершенных команд
                     serialSendSimple(s, request_last_command)
                     time.sleep(TIMEOUT_WAIT_DEFAULT)
-                    msg = serialRecvProtocol(s, Preamble.slave.value, TIMEOUT_WAIT_DEFAULT * 4)
+                    msg = serialRecvProtocol(s, Preamble.slave.value, TIMEOUT_WAIT_DEFAULT * DELAY_MULTIPLIER)
                     counter_cycle += 1
                     if msg:
                         print(list(msg))
                         if compilance_check(id_anch, command, started_commands, completed_commands, msg, msg_send=send_command) == -1:
-                            logger.error("Error anch {}".format(list(msg)))
+                            logger.warning("Error anch {}".format(list(msg)))
                             break
                     else:
                         serialSendSimple(s, request_last_command)
                         if counter_cycle > COUNTER_ATTEMPT:
-                            logger.error("completed anchor {} didn`t answer 10 times {}".format(id_anch, command))
+                            logger.warning("completed anchor {} didn`t answer 10 times {}".format(id_anch, command))
                             break
                     time.sleep(TIMEOUT_WAIT_DEFAULT)
             else:
@@ -326,10 +328,10 @@ def waiting_finish_command(s, command, timeout=float, block = bool, id=list, dat
             serialSendSimple(s, send_command)
             time.sleep(TIMEOUT_WAIT_DEFAULT)
             while not started_commands.get(id_anch):  
-                msg = serialRecvProtocol(s, Preamble.slave.value, TIMEOUT_WAIT_DEFAULT * 4)
+                msg = serialRecvProtocol(s, Preamble.slave.value, TIMEOUT_WAIT_DEFAULT * DELAY_MULTIPLIER)
                 if msg:
                     if compilance_check(id_anch, command, started_commands, completed_commands, msg) == -1:
-                        logger.error("Error anch {}".format(list(msg)))
+                        logger.warning("Error anch {}".format(list(msg)))
                         break
                 else:
                     counter_failed_reads[id_anch] += 1
@@ -338,7 +340,7 @@ def waiting_finish_command(s, command, timeout=float, block = bool, id=list, dat
                         serialSendSimple(s, send_command)
                         time.sleep(TIMEOUT_WAIT_DEFAULT)
                     elif counter_failed_reads[id_anch] > COUNTER_ATTEMPT:
-                        logger.error("started anchor {} didn`t answer 10 times {}".format(id_anch, command)) 
+                        logger.warning("started anchor {} didn`t answer 10 times {}".format(id_anch, command)) 
                         if command == Command.clear_flash.value:
                             started_commands[id_anch] = 0
                         break
@@ -352,12 +354,12 @@ def waiting_finish_command(s, command, timeout=float, block = bool, id=list, dat
                 request_last_command = create_msg_command(Command.last_command.value, id_anch2, data)
                 serialSendSimple(s, request_last_command)
                 time.sleep(TIMEOUT_WAIT_DEFAULT)
-                msg = serialRecvProtocol(s, Preamble.slave.value, TIMEOUT_WAIT_DEFAULT * 4)
+                msg = serialRecvProtocol(s, Preamble.slave.value, TIMEOUT_WAIT_DEFAULT * DELAY_MULTIPLIER)
 
                 if msg:
                     print(list(msg))
                     if compilance_check(id_anch2, command, started_commands, completed_commands, msg) == -1:
-                        logger.error("Error anch {}".format(list(msg)))
+                        logger.warning("Error anch {}".format(list(msg)))
                         break
                     
                 else:
@@ -365,7 +367,7 @@ def waiting_finish_command(s, command, timeout=float, block = bool, id=list, dat
                     if counter_failed_reads[id_anch] > COUNTER_ATTEMPT: 
                         deleted_id_from_dict(copy_started_commands, id_anch)
                         deleted_id_from_dict(started_commands, id_anch)
-                        logger.error("completed anchor {} didn`t answer 10 times {}".format(id_anch, command))
+                        logger.warning("completed anchor {} didn`t answer 10 times {}".format(id_anch, command))
                         break
 
             for key_compl_comm in completed_commands.keys():
