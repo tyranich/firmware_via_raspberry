@@ -4,6 +4,7 @@ from enum import Enum
 from datetime import datetime
 import logging, glob 
 import logging.handlers
+import os
 
 
 
@@ -12,15 +13,6 @@ import logging.handlers
 SERIAL_PORT_1 = 'COM16'
 # SERIAL_PORT = '/dev/ttyUSB0'
 SERIAL_BAUDRATE_1 = 57600
-
-SERIAL_PORT_2 = ""
-SERIAL_BAUDRATE_2 = 0000
-
-SERIAL_PORT_3 = ""
-SERIAL_BAUDRATE_3 = 0000
-
-SERIAL_PORT_4 = ""
-SERIAL_BAUDRATE_4 = 0000
 
 
 TCP_SERVER_HOST = 'localhost' 
@@ -96,26 +88,27 @@ class status_fimware(Enum):
     - WARNING
     - ERROR
 """
+directory = os.getcwd()
 
-ERROR_LOG_FILENAME = "firmware_for_raspberry\logs\error-logs.log"
-WARNING_LOG_FILENAME = "firmware_for_raspberry\logs\warning-logs.log"
-
+ERROR_LOG_FILENAME = "{}\\logs\\error-logs.log".format(directory)
+WARNING_LOG_FILENAME = "{}\\logs\\warning-logs.log".format(directory)
+FIRMWARE_MAIN_LOG_FILENAME = "{}\\logs\\firmware-main-logs.log".format(directory)
 
 LOGGING_CONFIG = {
     "version": 1,
-    "disable_existing_loggers": False,
+    "disable_existing_loggers": True,
     "formatters": {
         "default": {
             "format": "%(asctime)s:%(name)s:%(process)d:%(lineno)d" "%(levelname)s %(message)s",
             "datefmt": "%Y-%m-%d %H:%M:%S",
         }, 
         "simple": {
-            "format": "%(asctime)s:%(message)s:%(lineno)d",
+            "format": "%(asctime)s:%(name)s:%(message)s:%(lineno)d",
             "datefmt": "%Y-%m-%d %H:%M:%S",
         }
     },
     "handlers": {
-        "logfile": {
+        "error_formater": {
             "formatter": "default",
             "level": "ERROR",
             "class": "logging.handlers.RotatingFileHandler",
@@ -123,21 +116,33 @@ LOGGING_CONFIG = {
             "backupCount": 2,
         },
         
-        "verbose_output": {
+        "warning_formater": {
             "formatter": "simple",
-            "level": "ERROR",
+            "level": "WARNING",
             "class": "logging.handlers.RotatingFileHandler",
             "filename":WARNING_LOG_FILENAME, 
             "backupCount": 2,
-        }
-        
+        },
+
+        "firmware_main_formater":{
+            "formatter": "simple",
+            "level": "DEBUG",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename":FIRMWARE_MAIN_LOG_FILENAME, 
+            "maxBytes": 50,
+            "backupCount": 1,
+        }     
     },
-    "loggers": {},
+    "loggers": {
+        "main_firmware": { 
+            "level": "DEBUG",
+            "handlers": ["firmware_main_formater"],
+        }
+    },
     "root": {
         "level": "INFO",
-        "handlers": ["logfile"]
+        "handlers": ["error_formater", "warning_formater"]
     },
 }
-
 
 ### -------------------------------------------------------------- ###

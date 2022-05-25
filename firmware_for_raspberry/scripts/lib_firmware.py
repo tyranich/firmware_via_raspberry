@@ -18,22 +18,37 @@ logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger(__name__)
 
 def get_status_comm(message):
+    """
+    возвращает статус команды сообщения
+    """
     return list(message)[6]
 
 
 def get_last_comm(message):
+    """
+    возвращает статус последней команды сообщения
+    """
     return list(message)[5]
 
 
 def get_crc_last_comm(message):
+    """
+    возвращает црц последней команды 
+    """
     return list(message)[7]
 
 
 def get_crc_mess(message):
+    """
+    возвращает црц сообщения 
+    """
     return list(message)[-1]
 
 
 def get_id_mess(message):
+    """
+    возвращает айди полученного сообщения
+    """
     return list(message)[3]
 
 
@@ -80,6 +95,9 @@ def error_detection(recv_list, command):
 
 
 def deleted_id_from_dict(dict_, id):
+    """
+    удаляет id из словаря 
+    """
     if dict_.get(id):
         dict_.pop(id)
     else:
@@ -87,6 +105,9 @@ def deleted_id_from_dict(dict_, id):
 
 
 def boot_from_main(s, id):
+    """
+    выводит анкера из основной программы в загрузчик 
+    """
     time.sleep(0.1) 
     cmdBootOut_1 = [0xAA, 0x01, 0x00, 0x00, 0x01, 0x04, 0x00, 0x00, 0x00]
     cmdBootOut_1[2] = (id >> 8) & 0xff
@@ -96,7 +117,10 @@ def boot_from_main(s, id):
     serialSendSimple(s, cmdBootOut_1)
 
 
-def check_sum(string, current_crc): #проверка контрольной суммы файла, указана в конце строки файла 
+def check_sum(string, current_crc): 
+    """
+    проверка контрольной суммы файла, указана в конце строки файла 
+    """
     string = string.decode('utf-8')
     #print(string)
     string_for_hex = string
@@ -111,11 +135,18 @@ def check_sum(string, current_crc): #проверка контрольной с�
         return False
 
 
-def recv_dada_from_file(file, length_str): #получить следующую пачку данных из открытого файла 
+def recv_dada_from_file(file, length_str):
+    """
+    получить следующую пачку данных из открытого файла 
+    """
     return file.read(length_str)
 
 
 def get_list_to_write(path_file):
+    """
+    Функция формирует список строк из хекс файла. Проверяет контрольную сумму каждой строки, и удаляет 
+    ненужные данные. Возвращает список если количество успешнок проверок, совпало с количеством строк. 
+    """
     LEN_STRING = 16
     NUM_SYS = 16
     
@@ -177,11 +208,10 @@ def get_list_to_write(path_file):
                         else:
                             #если хоть одна строка файла не прошла проверку контрольной суммы, закрываем программу и возвращаем False
                             read_file.close()
+                            logger.error("check sum in {} not a match".format(string_for_check))
                             return False
                         
                         counter_string += 1
-
-                        
                         string_for_write = dict_string['start_flash'] + dict_string['flash_adress'] + dict_string['data']
                         list_string_hex.append(bytes.fromhex(string_for_write.decode('utf-8')))
                     continue
@@ -233,16 +263,10 @@ def compilance_check(id, command, dict_start, dict_completed, msg_recv, msg_send
     else:
         return None
 
-
-def sorting_dict(dict1, dict2):
-    sorted_dict = {x[0]:x[1] for x in dict1.items() if x[1] == 100}
-    dict2.update(sorted_dict)
-    for _ in sorted_dict.keys():
-        if dict1.get(_):
-            dict1.pop(_)
-
-
 def create_msg_command(command, id, data = 0):
+    """
+    форматер сообщений для отправки бутлоадеру 
+    """
     msg = None
     send_comm_buff = [0xAA, 0x01, 0x00, 0x00, 0x20, 0xB5, 0x00, 0x00, 0x00]
     send_comm_buff[2] = (id >> 8) & 0xff
@@ -308,7 +332,7 @@ def waiting_finish_command(s, command, timeout=float, block = bool, id=list, dat
                             logger.warning("Error anch {}".format(list(msg)))
                             break
                     else:
-                        serialSendSimple(s, request_last_command)
+                        serialSendSimple(s, request_last_command) 
                         if counter_cycle > COUNTER_ATTEMPT:
                             logger.warning("completed anchor {} didn`t answer 10 times {}".format(id_anch, command))
                             break

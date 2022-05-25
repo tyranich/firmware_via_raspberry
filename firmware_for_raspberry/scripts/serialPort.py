@@ -5,22 +5,23 @@ import serial
 from scripts.settings import *
 from scripts.crc import * 
 
+logging.config.dictConfig(LOGGING_CONFIG)
+logger = logging.getLogger(__name__)
+
+
 def serialConnect(port, baudrate):
-    #logMsgHead = "serial {}".format(s)
     """Подключение к сериал порту.  
     
     При неудачном соединении срабатывает exception и через
     каждые 1 сек попытка подключения повторяется бесконечно.
-
     """
-
     while True:
         try:
             s = serial.Serial(port=port, baudrate=baudrate, timeout=0.0001)
-            #logger.debug("{}".format(s) + f'Connected')
+            logger.info("{}".format(s) + f'Connected')
             return s
         except SerialException as e:
-            #logger.warning(f'{e} Will try to reconnect serial port')
+            logger.warning(f'{e} Will try to reconnect serial port')
             sleep(1)
 
 def serialSendSimple(s, msg):
@@ -30,7 +31,7 @@ def serialSendSimple(s, msg):
         s.write(msg)
         print(msg)
     except SerialException as e:
-        #logger.error(logMsgHead + f'{e}')
+        logger.error(logMsgHead + f'{e}')
         s.close()  # Закрыть старый порт
         s = Serial()  # Создать новый порт
         #serialConnect(s)  # Попытаться подключиться к новому порту
@@ -72,7 +73,7 @@ def serialSendProtocol(s, master_slave: int, id: int, devType: int, cmd: int, bu
         print('send')
         print(msg)
     except SerialException as e:
-        #logger.error(logMsgHead + f'{e}')
+        logger.error(logMsgHead + f'{e}')
         s.close()  # Закрыть старый порт
         s = Serial()  # Создать новый порт
         s.serialConnect()  # Попытаться подключиться к новому порту
@@ -86,7 +87,7 @@ def serial_recv_simple(s, length):
     try:
         msg = s.read(length)
     except SerialException as e:
-        #logger.error(logMsgHead + f'{e}.')
+        logger.error(logMsgHead + f'{e}.')
         s.close()
         s = Serial()
         #serialConnect(s)
@@ -121,7 +122,7 @@ def serialRecvProtocol(s, master_slave: int, timeout: float):
                     msg = test_msg
 
     except SerialException as e:
-        #logger.error(logMsgHead + f'{e}')
+        logger.error(logMsgHead + f'{e}')
         s.close()  # Закрыть старый порт
         s = Serial()  # Создать новый порт
         #serialConnect(s)  # Попытаться подключиться к новому порту
